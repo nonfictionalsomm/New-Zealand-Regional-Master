@@ -409,6 +409,7 @@
             name: "Hawke's Bay/Hawkes Bay GI",
             island: "North Island",
             officialSubregions: ["Central Hawke's Bay GI"],
+            // Note: Doc has "Gimlett Gravels", user prompt had "Gimblett Gravels". Using doc version.
             unofficialSubregions: ["Te Awanga", "Northern Esk Valley", "Mohaka", "Esk River Valley", "Tutaekuri River Valley", "Ngaruroro River Valley", "Korokipo", "Bridge Pa", "Gimlett Gravels", "Ohiti", "Havelock North"],
             features: ["Heretaunga Plains", "Hawke Bay", "Ngaruroro River", "Tukituki River"],
             producers: ["Craggy Range", "Esk Valley Estate", "Sacred Hill", "Sileni", "Te Mata", "Trinity Hill"]
@@ -433,7 +434,7 @@
             name: "Marlborough GI",
             island: "South Island",
             officialSubregions: [],
-            unofficialSubregions: ["Awatere", "Southern Valleys", "Wairau Valley"], // Doc lists "Awatere Valley", "Wairau Valley"
+            unofficialSubregions: ["Awatere Valley", "Southern Valleys", "Wairau Valley"], // Using doc values
             features: ["Richmond Range", "Wither Hill Range", "Kaikoura Ranges", "Wairau River", "Awatere River"],
             producers: ["Allan Scott", "Cloudy Bay", "Fromm", "Hunter's", "Saint Clair", "Spy Valley"]
           },
@@ -666,7 +667,6 @@
 
         /**
          * Builds the HTML for the 2-level (Island -> GI) data explorer.
-         * Re-uses CSS classes from reference code (.db-state, .db-zone)
          */
         function buildDatabaseExplorer() {
             databaseContainer.innerHTML = ''; 
@@ -760,7 +760,7 @@
 
             if (currentGameMode === 'GI-Island') {
                 sourcePairs = [...giIslandPairs];
-                useSmartBuilder = true; 
+                useSmartBuilder = false; // <-- BUG FIX 1: This was 'true'
             } else if (currentGameMode === 'GI-Subregion') {
                 sourcePairs = [...giSubregionPairs.filter(p => p.right !== "N/A")]; 
                 useSmartBuilder = true;
@@ -785,14 +785,31 @@
                 let pairIndex = 0;
 
                 while (roundPairs.length < 5 && attempts < sourcePairs.length * 2) {
+                    if (pairIndex >= sourcePairs.length) {
+                        // Failsafe if we run out of pairs
+                        break;
+                    }
                     const pair = sourcePairs[pairIndex % sourcePairs.length];
                     pairIndex++;
                     attempts++;
                     
-                    if (leftsInRound.has(pair.left) || rightsInRound.has(pair.right)) {
-                        continue;
+                    // --- START BUG FIX 2 ---
+                    // Simple check for duplicates
+                    if (currentGameMode === 'GI-Island') {
+                        // For GI-Island, we only care if the GI (left) is unique.
+                        // The Island (right) will absolutely have duplicates.
+                        if (leftsInRound.has(pair.left)) {
+                            continue;
+                        }
+                    } else {
+                        // Original logic for all other modes
+                        if (leftsInRound.has(pair.left) || rightsInRound.has(pair.right)) {
+                            continue;
+                        }
                     }
+                    // --- END BUG FIX 2 ---
 
+                    // Smart check for ambiguity
                     if (useSmartBuilder && doesPairConflict(pair, roundPairs, currentGameMode)) {
                         continue;
                     }
@@ -800,6 +817,10 @@
                     roundPairs.push(pair);
                     leftsInRound.add(pair.left);
                     rightsInRound.add(pair.right);
+                }
+                
+                if (roundPairs.length < 5) {
+                    console.warn(`Could only build a round of ${roundPairs.length} for mode ${currentGameMode}.`);
                 }
                 gameRounds.push(roundPairs);
             }
@@ -827,12 +848,16 @@
             
             currentRoundPairs = gameRounds[currentRound - 1];
             
-            if (!currentRoundPairs || currentRoundPairs.length < 5 || !currentRoundPairs[0]) {
+            // Updated check: Ensure round has *at least one* pair.
+            if (!currentRoundPairs || currentRoundPairs.length === 0) {
                 console.error("Error: Not enough non-conflicting pairs to build round.");
                 showMainMenu();
                 alert("Error: Could not load game data. Not enough unique pairs for this mode.");
                 return;
             }
+            
+            // The round can proceed with fewer than 5 pairs if necessary
+            const numPairsInRound = currentRoundPairs.length;
 
             const leftItems = [];
             const rightItems = [];
@@ -845,10 +870,11 @@
 
             shuffleArray(rightItems); 
             updateScoreboard();
-            renderButtons(leftItems, rightItems, pairType);
+            // Pass the actual number of pairs to renderButtons
+            renderButtons(leftItems, rightItems, pairType, numPairsInRound);
         }
 
-        function renderButtons(leftItems, rightItems, pairType) {
+        function renderButtons(leftItems, rightItems, pairType, numPairsInRound) {
             gameRowsContainer.innerHTML = ''; 
             itemAttempts.clear(); 
 
@@ -880,7 +906,8 @@
                     break;
             }
 
-            for(let i = 0; i < 5; i++) {
+            // Use numPairsInRound to determine loop iterations
+            for(let i = 0; i < numPairsInRound; i++) {
                 const row = document.createElement('div');
                 row.className = 'grid grid-cols-2 gap-4 md:gap-8';
                 const leftItem = leftItems[i];
@@ -954,7 +981,8 @@
                 leftBtn.disabled = true;
                 rightBtn.disabled = true;
 
-                if (matchesMade === 5) {
+                // Check against the actual number of pairs in the round
+                if (matchesMade === currentRoundPairs.length) {
                     setTimeout(showSuccessModal, 500);
                 }
             } else {
@@ -1009,7 +1037,13 @@
         }
 
         function showGameOver() {
-            const maxScore = TOTAL_ROUNDS * 5 * 2;
+            // Calculate max score based on actual rounds built
+            let maxScore = 0;
+            gameRounds.forEach(round => {
+                maxScore += round.length * 2; // 2 points per pair
+            });
+            if (maxScore === 0) maxScore = 1; // Avoid division by zero
+
             const percentage = Math.round(Math.max(0, (score / maxScore) * 100));
             let message = '';
             if (percentage === 100) message = "Perfect Score!";
@@ -1464,5 +1498,8 @@
     </script>
 </body>
 </html>
+
+
+
 
 
