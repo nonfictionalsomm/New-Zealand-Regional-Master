@@ -237,7 +237,8 @@
             
             <div class="space-y-3">
                 <button data-mode="GI-Island" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-lg">GI to Island</button>
-                <button data-mode="GI-Subregion" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-lg">GI to Subregions</button>
+                <button data-mode="GI-Subregion" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-lg">GI to Official Subregion</button>
+                <button data-mode="GI-Unofficial-Subregion" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-lg">GI to Unofficial Subregion</button>
                 <button data-mode="GI-Natural-Feature" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-lg">GI to Natural Feature</button>
                 <button data-mode="GI-Producer" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-lg">GI to Producer</button>
                 
@@ -256,7 +257,8 @@
             
             <div class="space-y-3">
                 <button data-mode="GI-Island" class="start-flashcards-btn w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">GI / Island</button>
-                <button data-mode="GI-Subregion" class="start-flashcards-btn w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">GI / Subregions</button>
+                <button data-mode="GI-Subregion" class="start-flashcards-btn w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">GI / Official Subregion</button>
+                <button data-mode="GI-Unofficial-Subregion" class="start-flashcards-btn w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">GI / Unofficial Subregion</button>
                 <button data-mode="GI-Natural-Feature" class="start-flashcards-btn w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">GI / Natural Feature</button>
                 <button data-mode="GI-Producer" class="start-flashcards-btn w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">GI / Producer</button>
                 
@@ -293,7 +295,8 @@
                 <h3 id="right-title" class="text-2xl font-bold text-center">Right Column</h3>
             </div>
             <div id="game-rows-container" class="space-y-3">
-                </div>
+                <!-- Game rows will be injected here by JS -->
+            </div>
         </div>
     </div>
 
@@ -367,7 +370,8 @@
             </div>
             <p class="text-lg mb-4 text-gray-700">Click any item to expand and see its contents.</p>
             <div id="database-container" class="flex-grow overflow-y-auto space-y-2 pr-2">
-                </div>
+                <!-- Database content will be injected here by JS -->
+            </div>
         </div>
     </div>
 
@@ -375,75 +379,85 @@
     <script>
         // --- DATA ---
         
-        // 1. Source data parsed from the Master Document
+        // 1. Source data parsed from the Master Document, now with official/unofficial distinction
         const giEntries = [
           {
             name: "Northland GI",
             island: "North Island",
-            subregions: ["Kerikeri", "Kaitaia", "Whangarei"],
+            officialSubregions: [],
+            unofficialSubregions: ["Kerikeri", "Kaitaia", "Whangarei"],
             features: ["Pacific Ocean"],
             producers: ["Karikari Estate", "Okahu Estate", "Marsden Estate"]
           },
           {
             name: "Auckland GI",
             island: "North Island",
-            subregions: ["Kumeu GI", "Matakana GI", "Waiheke Island GI", "South Auckland", "West Auckland", "Clevedon", "Huapai", "Henderson"],
+            officialSubregions: ["Kumeu GI", "Matakana GI", "Waiheke Island GI"],
+            unofficialSubregions: ["South Auckland", "West Auckland", "Clevedon", "Huapai", "Henderson"],
             features: ["Pacific Ocean", "Waitakere Ranges"],
             producers: ["Kumeu River", "Matua Valley", "Babich", "Cable Bay", "Stonyridge", "Pernod Ricard NZ", "Villa Maria"]
           },
           {
             name: "Gisborne GI",
             island: "North Island",
-            subregions: ["Hexton Hills (Golden Slope)", "Ormond", "Ormond Valley", "Manutuke", "Central Valley", "Riverpoint", "Patutahi", "Patutahi Plateau", "Waipaoa"],
+            officialSubregions: [],
+            unofficialSubregions: ["Hexton Hills (Golden Slope)", "Ormond", "Ormond Valley", "Manutuke", "Central Valley", "Riverpoint", "Patutahi", "Patutahi Plateau", "Waipaoa"],
             features: ["Waipaoa River", "Poverty Bay", "Raukumara Range"],
             producers: ["Millton", "Brunton Road"]
           },
           {
             name: "Hawke's Bay/Hawkes Bay GI",
             island: "North Island",
-            subregions: ["Central Hawke's Bay GI", "Te Awanga", "Northern Esk Valley", "Mohaka", "Esk River Valley", "Tutaekuri River Valley", "Ngaruroro River Valley", "Korokipo", "Bridge Pa", "Gimlett Gravels", "Ohiti", "Havelock North"],
+            officialSubregions: ["Central Hawke's Bay GI"],
+            unofficialSubregions: ["Te Awanga", "Northern Esk Valley", "Mohaka", "Esk River Valley", "Tutaekuri River Valley", "Ngaruroro River Valley", "Korokipo", "Bridge Pa", "Gimlett Gravels", "Ohiti", "Havelock North"],
             features: ["Heretaunga Plains", "Hawke Bay", "Ngaruroro River", "Tukituki River"],
             producers: ["Craggy Range", "Esk Valley Estate", "Sacred Hill", "Sileni", "Te Mata", "Trinity Hill"]
           },
           {
             name: "Wairarapa GI",
             island: "North Island",
-            subregions: ["Martinborough GI", "Gladstone GI", "Masterton"],
+            officialSubregions: ["Martinborough GI", "Gladstone GI"],
+            unofficialSubregions: ["Masterton"],
             features: ["Aorangi and Tararua Ranges", "Ruamahanga River"],
             producers: ["Ata Rangi", "Dry River", "Palliser Estate", "Voss Estate"]
           },
           {
             name: "Nelson GI",
             island: "South Island",
-            subregions: ["Motueka", "Takaka (Golden Bay)", "Upper Moutere (Moutere Hills)", "Waimea Plains"],
+            officialSubregions: [],
+            unofficialSubregions: ["Motueka", "Takaka (Golden Bay)", "Upper Moutere (Moutere Hills)", "Waimea Plains"],
             features: ["Tasman Mountains", "Richmond Range", "Waimea River", "Tasman Bay", "Golden Bay"],
             producers: ["Greenhough", "Seifried Estate", "Neudorf"]
           },
           {
             name: "Marlborough GI",
             island: "South Island",
-            subregions: ["Awatere", "Southern Valleys", "Wairau Valley"],
+            officialSubregions: [],
+            unofficialSubregions: ["Awatere", "Southern Valleys", "Wairau Valley"], // Doc lists "Awatere Valley", "Wairau Valley"
             features: ["Richmond Range", "Wither Hill Range", "Kaikoura Ranges", "Wairau River", "Awatere River"],
             producers: ["Allan Scott", "Cloudy Bay", "Fromm", "Hunter's", "Saint Clair", "Spy Valley"]
           },
           {
             name: "Canterbury GI",
             island: "South Island",
-            subregions: ["North Canterbury GI", "Waipara Valley/Waipara GI", "Canterbury Plains"],
+            officialSubregions: ["North Canterbury GI", "Waipara Valley/Waipara GI"],
+            unofficialSubregions: ["Canterbury Plains"],
             features: ["Waimakariri River", "Waipara River", "Puketeraki Range", "Canterbury Plains"],
             producers: ["Pegasus Bay", "Pyramid Valley", "Mud House", "Giesen"]
           },
           {
             name: "Waitaki North Otago/Waitaki Valley GI",
             island: "South Island",
-            subregions: [], // Empty as per document
+            officialSubregions: [],
+            unofficialSubregions: [],
             features: ["Waitaki River"],
             producers: ["Ostler", "Pasquale", "River-T Estate Wines", "Valli Vineyards"]
           },
           {
             name: "Central Otago GI",
             island: "South Island",
-            subregions: ["Bannockburn GI", "Alexandra Basin", "Bendigo", "Cromwell Basin (Pisa & Lowburn)", "Gibbston", "Wanaka"],
+            officialSubregions: ["Bannockburn GI"],
+            unofficialSubregions: ["Alexandra Basin", "Bendigo", "Cromwell Basin (Pisa & Lowburn)", "Gibbston", "Wanaka"],
             features: ["Southern Alps", "Lake Wanaka", "Waitaki River (North Otago)"],
             producers: ["Rippon", "Peregrine", "Felton Road", "Mt. Difficulty"]
           }
@@ -455,12 +469,21 @@
           // Mode 1: GI-Island
           gameData.push({ left: gi.name, right: gi.island, type: "GI-Island" });
 
-          // Mode 2: GI-Subregion
-          if (gi.subregions.length === 0) {
+          // Mode 2: GI-Subregion (Official)
+          if (gi.officialSubregions.length === 0) {
             gameData.push({ left: gi.name, right: "N/A", type: "GI-Subregion" });
           } else {
-            gi.subregions.forEach(subregion => {
+            gi.officialSubregions.forEach(subregion => {
               gameData.push({ left: gi.name, right: subregion, type: "GI-Subregion" });
+            });
+          }
+
+          // NEW Mode 5: GI-Unofficial-Subregion
+          if (gi.unofficialSubregions.length === 0) {
+            gameData.push({ left: gi.name, right: "N/A", type: "GI-Unofficial-Subregion" });
+          } else {
+            gi.unofficialSubregions.forEach(subregion => {
+              gameData.push({ left: gi.name, right: subregion, type: "GI-Unofficial-Subregion" });
             });
           }
 
@@ -501,6 +524,7 @@
         const flashcardDecks = {
             'GI-Island': [],
             'GI-Subregion': [],
+            'GI-Unofficial-Subregion': [], // NEW
             'GI-Natural-Feature': [],
             'GI-Producer': []
         };
@@ -516,6 +540,7 @@
         // Data Arrays & Maps
         let giIslandPairs = [];
         let giSubregionPairs = [];
+        let giUnofficialSubregionPairs = []; // NEW
         let giFeaturePairs = [];
         let giProducerPairs = [];
         const databaseJSON = {};
@@ -524,12 +549,14 @@
         const allLeftToRightPairs = {
             'GI-Island': new Map(),
             'GI-Subregion': new Map(),
+            'GI-Unofficial-Subregion': new Map(), // NEW
             'GI-Natural-Feature': new Map(),
             'GI-Producer': new Map()
         };
         const allRightToLeftPairs = {
             'GI-Island': new Map(),
             'GI-Subregion': new Map(),
+            'GI-Unofficial-Subregion': new Map(), // NEW
             'GI-Natural-Feature': new Map(),
             'GI-Producer': new Map()
         };
@@ -596,7 +623,8 @@
                         databaseJSON[islandName] = { gis: {} };
                     }
                     if (!databaseJSON[islandName].gis[giName]) {
-                         databaseJSON[islandName].gis[giName] = { subregions: new Set(), features: new Set(), producers: new Set() };
+                         // UPDATED: Include both official and unofficial subregion sets
+                         databaseJSON[islandName].gis[giName] = { officialSubregions: new Set(), unofficialSubregions: new Set(), features: new Set(), producers: new Set() };
                     }
                 }
             });
@@ -609,8 +637,11 @@
                 // Find the GI entry (left) and add the detail (right)
                 for (const island in databaseJSON) {
                     if (databaseJSON[island].gis[left]) { // 'left' is the GI name
-                        if (type === 'GI-Subregion') {
-                            databaseJSON[island].gis[left].subregions.add(right);
+                        // UPDATED: Check for both subregion types
+                        if (type === 'GI-Subregion') { // This is "Official"
+                            databaseJSON[island].gis[left].officialSubregions.add(right);
+                        } else if (type === 'GI-Unofficial-Subregion') { // This is "Unofficial"
+                            databaseJSON[island].gis[left].unofficialSubregions.add(right);
                         } else if (type === 'GI-Natural-Feature') {
                             databaseJSON[island].gis[left].features.add(right);
                         } else if (type === 'GI-Producer') {
@@ -624,7 +655,9 @@
             for (const island in databaseJSON) {
                 for (const gi in databaseJSON[island].gis) {
                     const giData = databaseJSON[island].gis[gi];
-                    if (giData.subregions.size === 0) giData.subregions.add("N/A");
+                    // UPDATED: Check both subregion sets
+                    if (giData.officialSubregions.size === 0) giData.officialSubregions.add("N/A");
+                    if (giData.unofficialSubregions.size === 0) giData.unofficialSubregions.add("N/A");
                     if (giData.features.size === 0) giData.features.add("N/A");
                     if (giData.producers.size === 0) giData.producers.add("N/A");
                 }
@@ -641,9 +674,8 @@
             
             islands.forEach(island => {
                 const islandData = databaseJSON[island];
-                const islandId = `db-island-${island.replace(/[\s\(\)\/'.]/g, '')}`;
+                const islandId = `db-island-${island.replace(/[\s\(\)\/'.&-]/g, '')}`;
                 const islandDiv = document.createElement('div');
-                // Use .db-item and .db-state (from ref code) for Island level
                 islandDiv.innerHTML = `<div class="db-item db-state" data-target="${islandId}">${island}</div>`;
                 const giContainer = document.createElement('div');
                 giContainer.id = islandId;
@@ -652,18 +684,20 @@
                 const gisInIsland = Object.keys(islandData.gis).sort();
                 gisInIsland.forEach(gi => {
                     const giData = islandData.gis[gi];
-                    const giId = `db-gi-${island.replace(/[\s\(\)\/'.]/g, '')}-${gi.replace(/[\s\(\)\/'.]/g, '')}`;
+                    const giId = `db-gi-${island.replace(/[\s\(\)\/'.&-]/g, '')}-${gi.replace(/[\s\(\)\/'.&-]/g, '')}`;
                     const giDiv = document.createElement('div');
-                    // Use .db-item and .db-zone (from ref code) for GI level
                     giDiv.innerHTML = `<div class="db-item db-zone" data-target="${giId}">${gi}</div>`;
                     const detailsContainer = document.createElement('div');
                     detailsContainer.id = giId;
                     detailsContainer.className = 'db-item-content py-2';
                     
+                    // UPDATED: Show both Official and Unofficial Subregions
                     let detailsHtml = '<div class="db-gi-details">';
-                    // Add Subregions, which was not in the ref code's GI details
-                    detailsHtml += '<h5>Subregions:</h5><ul>';
-                    Array.from(giData.subregions).sort().forEach(s => detailsHtml += `<li>${s}</li>`);
+                    detailsHtml += '<h5>Official Subregions:</h5><ul>';
+                    Array.from(giData.officialSubregions).sort().forEach(s => detailsHtml += `<li>${s}</li>`);
+                    detailsHtml += '</ul>';
+                    detailsHtml += '<h5>Unofficial Subregions:</h5><ul>';
+                    Array.from(giData.unofficialSubregions).sort().forEach(s => detailsHtml += `<li>${s}</li>`);
                     detailsHtml += '</ul>';
                     detailsHtml += '<h5>Major Natural Features:</h5><ul>';
                     Array.from(giData.features).sort().forEach(f => detailsHtml += `<li>${f}</li>`);
@@ -698,7 +732,6 @@
 
         /**
         * Checks if a pair conflicts with the pairs already in the round.
-        * This is the "smart" logic to prevent ambiguity.
         */
         function doesPairConflict(pair, roundPairs, mode) {
             const ltrMap = allLeftToRightPairs[mode];
@@ -707,7 +740,6 @@
             const newLeft = pair.left;
             const newRight = pair.right;
 
-            // Get all possible partners for the new pair
             const allRightsForNewLeft = ltrMap.get(newLeft) || new Set();
             const allLeftsForNewRight = rtlMap.get(newRight) || new Set();
 
@@ -715,11 +747,7 @@
                 const existingLeft = existingPair.left;
                 const existingRight = existingPair.right;
 
-                // Check for ambiguity:
-                // 1. Does the new Left (GI_A) have a possible match to an *existing* Right (Feature_B)?
                 if (allRightsForNewLeft.has(existingRight)) return true;
-                
-                // 2. Does the new Right (Feature_A) have a possible match to an *existing* Left (GI_B)?
                 if (allLeftsForNewRight.has(existingLeft)) return true;
             }
             return false;
@@ -732,16 +760,19 @@
 
             if (currentGameMode === 'GI-Island') {
                 sourcePairs = [...giIslandPairs];
-                useSmartBuilder = true; // Many GIs per Island
+                useSmartBuilder = true; 
             } else if (currentGameMode === 'GI-Subregion') {
-                sourcePairs = [...giSubregionPairs.filter(p => p.right !== "N/A")]; // Exclude N/A from game
-                useSmartBuilder = true; // Many Subregions per GI
+                sourcePairs = [...giSubregionPairs.filter(p => p.right !== "N/A")]; 
+                useSmartBuilder = true;
+            } else if (currentGameMode === 'GI-Unofficial-Subregion') { // NEW
+                sourcePairs = [...giUnofficialSubregionPairs.filter(p => p.right !== "N/A")]; 
+                useSmartBuilder = true;
             } else if (currentGameMode === 'GI-Natural-Feature') {
                 sourcePairs = [...giFeaturePairs];
-                useSmartBuilder = true; // Feature can be in multiple GIs
+                useSmartBuilder = true; 
             } else if (currentGameMode === 'GI-Producer') {
                 sourcePairs = [...giProducerPairs];
-                useSmartBuilder = true; // Producer can be in multiple GIs
+                useSmartBuilder = true; 
             }
 
             for (let i = 0; i < TOTAL_ROUNDS; i++) {
@@ -750,7 +781,7 @@
                 let leftsInRound = new Set();
                 let rightsInRound = new Set();
                 
-                let attempts = 0; // Failsafe
+                let attempts = 0; 
                 let pairIndex = 0;
 
                 while (roundPairs.length < 5 && attempts < sourcePairs.length * 2) {
@@ -758,17 +789,14 @@
                     pairIndex++;
                     attempts++;
                     
-                    // Simple check for duplicates
                     if (leftsInRound.has(pair.left) || rightsInRound.has(pair.right)) {
                         continue;
                     }
 
-                    // Smart check for ambiguity
                     if (useSmartBuilder && doesPairConflict(pair, roundPairs, currentGameMode)) {
                         continue;
                     }
 
-                    // Pair is clean
                     roundPairs.push(pair);
                     leftsInRound.add(pair.left);
                     rightsInRound.add(pair.right);
@@ -795,7 +823,7 @@
             selectedLeft = null;
             selectedRight = null;
             itemAttempts.clear();
-            roundHadIncorrectMatch = false; // Reset for contextual messages
+            roundHadIncorrectMatch = false; 
             
             currentRoundPairs = gameRounds[currentRound - 1];
             
@@ -824,7 +852,7 @@
             gameRowsContainer.innerHTML = ''; 
             itemAttempts.clear(); 
 
-            switch (currentGameMode) { // Use currentGameMode for consistency
+            switch (currentGameMode) { 
                 case 'GI-Island':
                     leftTitle.textContent = "GI";
                     rightTitle.textContent = "Island";
@@ -832,8 +860,13 @@
                     break;
                 case 'GI-Subregion':
                     leftTitle.textContent = "GI";
-                    rightTitle.textContent = "Subregion";
-                    roundPrompt.textContent = "Match the GI to its Subregion";
+                    rightTitle.textContent = "Official Subregion";
+                    roundPrompt.textContent = "Match the GI to its Official Subregion";
+                    break;
+                case 'GI-Unofficial-Subregion': // NEW
+                    leftTitle.textContent = "GI";
+                    rightTitle.textContent = "Unofficial Subregion";
+                    roundPrompt.textContent = "Match the GI to its Unofficial Subregion";
                     break;
                 case 'GI-Natural-Feature':
                     leftTitle.textContent = "GI";
@@ -908,7 +941,6 @@
             leftBtn.classList.remove('selected');
             rightBtn.classList.remove('selected');
 
-            // Use the global map for the current mode
             const isCorrect = allLeftToRightPairs[currentGameMode].get(leftValue)?.has(rightValue);
 
             if (isCorrect) {
@@ -927,7 +959,7 @@
                 }
             } else {
                 score = Math.max(0, score - 1); 
-                roundHadIncorrectMatch = true; // Set flag for encouraging message
+                roundHadIncorrectMatch = true; 
                 const currentAttempts = itemAttempts.get(leftId);
                 itemAttempts.set(leftId, currentAttempts + 1); 
 
@@ -953,11 +985,11 @@
             if (roundHadIncorrectMatch) {
                 message = encouragingMessages[Math.floor(Math.random() * encouragingMessages.length)];
                 modalMessage.classList.remove('text-green-700');
-                modalMessage.classList.add('text-blue-700'); // Different color for encouragement
+                modalMessage.classList.add('text-blue-700');
             } else {
                 message = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
                 modalMessage.classList.remove('text-blue-700');
-                modalMessage.classList.add('text-green-700'); // Green for perfect
+                modalMessage.classList.add('text-green-700');
             }
             modalMessage.textContent = message;
             
@@ -1001,7 +1033,7 @@
             gameOverModal.firstElementChild.classList.add('scale-95', 'opacity-0');
             setTimeout(() => {
                 gameOverModal.classList.add('hidden');
-                startModal.classList.remove('hidden'); // Go to main menu
+                startModal.classList.remove('hidden'); 
             }, 200);
         }
 
@@ -1013,7 +1045,6 @@
             const cleanId = (str) => str.replace(/[\s\(\)\/'.&-]/g, '');
 
             // --- GI-Island Deck (Mode 1) ---
-            // front: Island, back: GI(s)
             uniquePairs.set('GI-Island', new Map());
             giIslandPairs.forEach(p => {
                 if (!uniquePairs.get('GI-Island').has(p.right)) {
@@ -1023,7 +1054,7 @@
             });
             uniquePairs.get('GI-Island').forEach((gis, island) => {
                 flashcardDecks['GI-Island'].push({
-                    prompt: `What GI(s) are on [B]?`.replace('[B]', island), // Custom prompt
+                    prompt: `What GI(s) are on [B]?`.replace('[B]', island), 
                     front: island,
                     back: Array.from(gis).sort().join(' / '),
                     id: `gi-${cleanId(island)}`,
@@ -1031,8 +1062,7 @@
                 });
             });
 
-            // --- GI-Subregion Deck (Mode 2) ---
-            // front: Subregion, back: GI(s)
+            // --- GI-Subregion Deck (Mode 2 - Official) ---
             uniquePairs.set('GI-Subregion', new Map());
             const noSubregionGIs = giSubregionPairs
                 .filter(p => p.right === 'N/A')
@@ -1061,15 +1091,50 @@
             if (noSubregionGIs) {
                 flashcardDecks['GI-Subregion'].push({
                     prompt: `A special rule of New Zealand GIs:`,
-                    front: `Which GI(s) have no listed subregions?`,
+                    front: `Which GI(s) have no official subregions?`, // Clarified
                     back: noSubregionGIs,
-                    id: `sub-special-no-subregions`,
+                    id: `sub-special-no-official-subregions`,
+                    learned: false
+                });
+            }
+
+            // --- GI-Unofficial-Subregion Deck (NEW) ---
+            uniquePairs.set('GI-Unofficial-Subregion', new Map());
+            const noUnofficialSubregionGIs = giUnofficialSubregionPairs
+                .filter(p => p.right === 'N/A')
+                .map(p => p.left)
+                .sort()
+                .join(' / ');
+            const regularUnofficialSubregionPairs = giUnofficialSubregionPairs.filter(p => p.right !== 'N/A');
+
+            regularUnofficialSubregionPairs.forEach(p => {
+                if (!uniquePairs.get('GI-Unofficial-Subregion').has(p.right)) {
+                    uniquePairs.get('GI-Unofficial-Subregion').set(p.right, new Set());
+                }
+                uniquePairs.get('GI-Unofficial-Subregion').get(p.right).add(p.left); // key=UnofficialSubregion, value=Set(GIs)
+            });
+            
+            uniquePairs.get('GI-Unofficial-Subregion').forEach((gis, subregion) => {
+                flashcardDecks['GI-Unofficial-Subregion'].push({
+                    prompt: `What GI is the unofficial subregion [B] in?`.replace('[B]', subregion), 
+                    front: subregion,
+                    back: Array.from(gis).sort().join(' / '),
+                    id: `unoff-sub-${cleanId(subregion)}`,
+                    learned: false
+                });
+            });
+
+            if (noUnofficialSubregionGIs) {
+                flashcardDecks['GI-Unofficial-Subregion'].push({
+                    prompt: `A special rule of New Zealand GIs:`,
+                    front: `Which GI(s) have no listed unofficial subregions?`, 
+                    back: noUnofficialSubregionGIs,
+                    id: `unoff-sub-special-no-unofficial-subregions`,
                     learned: false
                 });
             }
 
             // --- GI-Natural-Feature Deck (Mode 3) ---
-            // front: Feature, back: GI(s)
             uniquePairs.set('GI-Natural-Feature', new Map());
             giFeaturePairs.forEach(p => {
                 if (!uniquePairs.get('GI-Natural-Feature').has(p.right)) {
@@ -1089,7 +1154,6 @@
             });
 
             // --- GI-Producer Deck (Mode 4) ---
-            // front: Producer, back: GI(s)
             uniquePairs.set('GI-Producer', new Map());
             giProducerPairs.forEach(p => {
                     if (!uniquePairs.get('GI-Producer').has(p.right)) {
@@ -1115,7 +1179,8 @@
             shuffleArray(currentFlashcardDeck);
 
             if (mode === 'GI-Island') flashcardDeckTitle.textContent = 'GI / Island Deck';
-            if (mode === 'GI-Subregion') flashcardDeckTitle.textContent = 'GI / Subregion Deck';
+            if (mode === 'GI-Subregion') flashcardDeckTitle.textContent = 'GI / Official Subregion Deck';
+            if (mode === 'GI-Unofficial-Subregion') flashcardDeckTitle.textContent = 'GI / Unofficial Subregion Deck'; // NEW
             if (mode === 'GI-Natural-Feature') flashcardDeckTitle.textContent = 'GI / Natural Feature Deck';
             if (mode === 'GI-Producer') flashcardDeckTitle.textContent = 'GI / Producer Deck';
 
@@ -1207,7 +1272,7 @@
             if (!card) return; 
 
             const mainDeckCard = currentFlashcardDeck.find(c => c.id === card.id);
-            if (mainDeckCard) { // Check if card exists in main deck
+            if (mainDeckCard) { 
                 mainDeckCard.learned = !mainDeckCard.learned;
                 
                 if (mainDeckCard.learned) {
@@ -1223,20 +1288,16 @@
             
             setTimeout(() => {
                 const oldIndex = currentCardIndex;
-                const oldId = currentFilteredDeck[oldIndex]?.id; // Use optional chaining
+                const oldId = currentFilteredDeck[oldIndex]?.id; 
                 buildFilteredDeck();
                 
-                if (currentFilteredDeck.length === 0) return; // Deck is now empty
+                if (currentFilteredDeck.length === 0) return; 
 
-                // Try to find the card in the new deck
                 const newIndex = currentFilteredDeck.findIndex(c => c.id === oldId);
 
                 if (newIndex !== -1) {
-                    // Card is still in this filtered deck, stay on it
                     showCard(newIndex);
                 } else {
-                    // Card was removed (e.g., marked learned in "Unlearned" mode)
-                    // Show the next logical card
                     showCard(Math.min(oldIndex, currentFilteredDeck.length - 1));
                 }
             }, 200);
@@ -1299,16 +1360,18 @@
         // --- GLOBAL INITIALIZATION ---
         
         function initializeData() {
-            // 1. Populate filtered arrays for the matching game
+            // 1. Populate filtered arrays
             giIslandPairs = gameData.filter(q => q.type === 'GI-Island');
             giSubregionPairs = gameData.filter(q => q.type === 'GI-Subregion');
+            giUnofficialSubregionPairs = gameData.filter(q => q.type ==='GI-Unofficial-Subregion'); // NEW
             giFeaturePairs = gameData.filter(q => q.type === 'GI-Natural-Feature' && q.right !== 'N/A' && q.right !== 'none');
             giProducerPairs = gameData.filter(q => q.type === 'GI-Producer' && q.right !== 'N/A');
             
-            // 2. Build the LTR and RTL maps for game logic
+            // 2. Build the LTR and RTL maps
             [
                 { key: 'GI-Island', data: giIslandPairs },
                 { key: 'GI-Subregion', data: giSubregionPairs },
+                { key: 'GI-Unofficial-Subregion', data: giUnofficialSubregionPairs }, // NEW
                 { key: 'GI-Natural-Feature', data: giFeaturePairs },
                 { key: 'GI-Producer', data: giProducerPairs }
             ].forEach(mode => {
@@ -1330,7 +1393,7 @@
                 });
             });
 
-            // 3. Build the flashcard decks with new logic
+            // 3. Build the flashcard decks
             buildFlashcardDecks();
         }
         
@@ -1401,3 +1464,5 @@
     </script>
 </body>
 </html>
+
+
