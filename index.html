@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Zealand Regional Master</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: #FDF8F2; /* Creamy background */
+            color: #4B3F3F; /* Dark brown text */
+            /* Prevent annoying bounce/refresh on mobile */
+            overscroll-behavior: none;
+        }
+        h1, h2, h3, h4, h5 {
+            font-family: 'Playfair Display', serif;
+        }
+        .game-card {
+            background-color: #FFFFFF;
+            border: 1px solid #DED1C1;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .btn-choice {
+            transition: all 0.2s ease-in-out;
+            border: 2px solid #DED1C1;
+            background-color: #fff;
+            min-height: 60px; /* Ensure buttons have a good clickable height */
+            display: flex;
+            width: 100%;
+            align-items: center;
+            justify-content: center; /* Center text */
+            text-align: center;
+            padding: 0.5rem;
+        }
+        .btn-choice:hover:not(:disabled) {
+            background-color: #FDF8F2;
+            transform: translateY(-2px);
+        }
+        .btn-choice.selected {
+            background-color: #E0E7FF; /* Light blue for selected */
+            border-color: #A5B4FC;
+            box-shadow: 0 0 0 3px #A5B4FC;
+        }
+        .btn-choice:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .btn-choice.correct {
+            background-color: #D1FAE5; /* Green for correct */
+            border-color: #6EE7B7;
+            color: #065F46;
+            cursor: not-allowed;
+            opacity: 1;
+        }
+        .btn-choice.incorrect {
+            animation: shake 0.5s;
+            background-color: #FEE2E2; /* Red for incorrect */
+            border-color: #FCA5A5;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+        }
+
+        /* --- Database Explorer Styles --- */
+        .db-item {
+            padding: 12px 16px;
+            background-color: #fff;
+            border: 1px solid #DED1C1;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            position: relative;
+            padding-right: 40px; /* Space for arrow */
+        }
+        .db-item:hover {
+            background-color: #FDF8F2;
+        }
+        .db-item::after { /* Arrow icon */
+            content: '▼';
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%) rotate(0deg);
+            transition: transform 0.3s ease;
+            font-size: 0.8em;
+            color: #8c7d7d;
+        }
+        .db-item.expanded::after {
+            transform: translateY(-50%) rotate(-180deg);
+        }
+        .db-item-no-click {
+            padding: 12px 16px;
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            font-weight: 700;
+            color: #999;
+            cursor: not-allowed;
+        }
+        .db-item-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            padding-left: 1.5rem; /* Indentation */
+        }
+        .db-item-content.expanded {
+            max-height: 2000px; /* Arbitrary large height */
+            transition: max-height 0.5s ease-in;
+        }
+        .db-state { background-color: #fff; } /* Re-using styles for Island */
+        .db-zone { background-color: #fcfaf7; } /* Re-using styles for GI */
+        .db-gi-details {
+            background: #FDF8F2;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px dashed #DED1C1;
+        }
+        .db-gi-details h5 {
+            font-weight: 700;
+            color: #4B3F3F;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+        .db-gi-details ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+
+        /* --- Flashcard Styles --- */
+        #flashcard {
+            width: 100%;
+            height: 300px;
+            perspective: 1000px;
+            cursor: pointer;
+            user-select: none; /* Prevent text selection during swipe */
+        }
+        #flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        #flashcard.flipped #flashcard-inner {
+            transform: rotateY(180deg);
+        }
+        #flashcard-front, #flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            border-radius: 1rem;
+            border: 2px solid #DED1C1;
+            background-color: #FFFFFF;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        #flashcard-back {
+            transform: rotateY(180deg);
+            background-color: #FDF8F2;
+        }
+        .flashcard-prompt {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #8c7d7d;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .flashcard-content {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.25rem;
+            font-weight: 700;
+            text-align: center;
+        }
+        .flashcard-answer {
+             font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            color: #c0392b;
+        }
+        .btn-nav {
+             background-color: #fff;
+             color: #4B3F3F;
+             font-weight: 700;
+             padding: 0.75rem 1.5rem;
+             border-radius: 8px;
+             border: 2px solid #DED1C1;
+             transition: all 0.2s;
+        }
+        .btn-nav:hover {
+            background-color: #FDF8F2;
+            transform: translateY(-2px);
+        }
+        .btn-nav:disabled {
+            background-color: #f3f3f3;
+            color: #aaa;
+            cursor: not-allowed;
+            transform: none;
+            border-color: #eee;
+        }
+        .btn-secondary {
+            background-color: #4B3F3F;
+            color: #FFFFFF;
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+        .btn-secondary:hover {
+            background-color: #3a3030;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="start-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center transform transition-all">
+            <h2 class="text-4xl font-bold mb-4 text-red-900">New Zealand Regional Master</h2>
+            <p class="text-lg mb-6 text-gray-700">Choose your challenge</p>
+            
+            <div class="space-y-3">
+                <button data-mode="GI-Island" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-lg">GI to Island</button>
+                <button data-mode="GI-Subregion" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-lg">GI to Subregions</button>
+                <button data-mode="GI-Natural-Feature" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-lg">GI to Natural Feature</button>
+                <button data-mode="GI-Producer" class="start-game-btn w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors text-lg">GI to Producer</button>
+                
+                <hr class="my-3 border-t-2 border-gray-200">
+
+                <button id="flashcards-btn" class="w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">Flashcards</button>
+                <button id="explore-data-btn" class="w-full bg-gray-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors text-lg">Explore Data</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="flashcard-menu-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center transform transition-all">
+            <h2 class="text-4xl font-bold mb-6 text-blue-900">Flashcard Decks</h2>
+            <p class="text-lg mb-6 text-gray-700">Choose a deck to study</p>
+            
+            <div class="space-y-3">
+                <button data-mode="GI-Island" class="start-flashcards-btn w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">GI / Island</button>
+                <button data-mode="GI-Subregion" class="start-flashcards-btn w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">GI / Subregions</button>
+                <button data-mode="GI-Natural-Feature" class="start-flashcards-btn w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">GI / Natural Feature</button>
+                <button data-mode="GI-Producer" class="start-flashcards-btn w-full bg-blue-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-900 transition-colors text-lg">GI / Producer</button>
+                
+                <hr class="my-3 border-t-2 border-gray-200">
+                <button id="flashcard-menu-back-btn" class="w-full bg-gray-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors text-lg">Main Menu</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="game-container" class="w-full max-w-4xl mx-auto hidden relative pt-20">
+        <button id="game-main-menu-btn" class="absolute top-4 left-4 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors text-sm z-10">Main Menu</button>
+        <div class="text-center mb-6">
+            <h1 class="text-4xl md:text-5xl font-bold text-red-900">New Zealand Regional Master</h1>
+            <p class="text-lg text-gray-600 mt-2">New Zealand Wine GI Challenge</p>
+        </div>
+        <div class="flex justify-between items-center mb-6 p-4 rounded-lg bg-red-800/10 text-red-900 game-card">
+            <div class="text-center">
+                <h3 class="text-xl font-bold">Round</h3>
+                <p id="round-info" class="text-2xl font-semibold">1 / 10</p>
+            </div>
+            <div class="text-center">
+                <h3 id="round-prompt" class="text-xl font-bold">Match the items</h3>
+                <p class="text-lg">Select one item from each column to make a match.</p>
+            </div>
+            <div class="text-center">
+                <h3 class="text-xl font-bold">Score</h3>
+                <p id="score-info" class="text-2xl font-semibold">0</p>
+            </div>
+        </div>
+        <div class="game-card rounded-lg p-6 md:p-8">
+            <div class="grid grid-cols-2 gap-4 md:gap-8 mb-4">
+                <h3 id="left-title" class="text-2xl font-bold text-center">Left Column</h3>
+                <h3 id="right-title" class="text-2xl font-bold text-center">Right Column</h3>
+            </div>
+            <div id="game-rows-container" class="space-y-3">
+                </div>
+        </div>
+    </div>
+
+    <div id="flashcard-container" class="w-full max-w-2xl mx-auto hidden relative pt-20">
+        <button id="flashcard-main-menu-btn" class="absolute top-4 left-4 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors text-sm z-10">Main Menu</button>
+        
+        <div class="text-center mb-6">
+            <h1 class="text-4xl md:text-5xl font-bold text-blue-900">Flashcards</h1>
+            <p id="flashcard-deck-title" class="text-lg text-gray-600 mt-2">Deck Title</p>
+        </div>
+
+        <div class="game-card rounded-lg p-4 md:p-6 mb-6">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <span class="font-bold">Study:</span>
+                    <label class="flex items-center"><input type="radio" name="studyMode" value="all" class="study-mode-radio" checked> <span class="ml-1">All</span></label>
+                    <label class="flex items-center"><input type="radio" name="studyMode" value="unlearned" class="study-mode-radio"> <span class="ml-1">Unlearned</span></label>
+                    <label class="flex items-center"><input type="radio" name="studyMode" value="learned" class="study-mode-radio"> <span class="ml-1">Learned</span></label>
+                </div>
+                <button id="reset-deck-btn" class="btn-secondary">Reset Deck</button>
+            </div>
+        </div>
+
+        <div id="flashcard" class="hidden">
+            <div id="flashcard-inner">
+                <div id="flashcard-front">
+                    <div class="flashcard-prompt">Prompt</div>
+                    <div class="flashcard-content">Front Content</div>
+                </div>
+                <div id="flashcard-back">
+                    <div class="flashcard-content flashcard-answer">Back Content</div>
+                </div>
+            </div>
+        </div>
+
+        <p id="flashcard-status" class="text-center text-lg font-bold text-gray-700 my-4">Card 1 of 10</p>
+        <p id="flashcard-empty-deck-msg" class="text-center text-lg font-bold text-red-700 my-4 hidden">No cards in this study mode.</p>
+
+        <div class="flex justify-between items-center mt-4">
+            <button id="prev-card-btn" class="btn-nav">Previous</button>
+            <button id="toggle-learned-btn" class="btn-nav bg-green-600 text-white border-green-700 hover:bg-green-700">Mark as Learned</button>
+            <button id="next-card-btn" class="btn-nav">Next</button>
+        </div>
+    </div>
+
+
+    <div id="success-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center transform transition-all scale-95 opacity-0">
+            <div id="modal-message" class="text-4xl font-bold mb-4 text-green-700">Great Job!</div>
+            <button id="next-round-btn" class="w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors">Next Round</button>
+        </div>
+    </div>
+    
+    <div id="game-over-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center transform transition-all scale-95 opacity-0">
+            <h2 class="text-4xl font-bold mb-4 text-red-900">Game Over!</h2>
+            <p id="final-score-message" class="text-3xl font-bold mb-4 text-red-800"></p>
+            <div class="bg-red-800/10 p-4 rounded-lg mb-6">
+                <p class="text-lg text-left clear-both">Final Score: <span id="final-score" class="font-bold float-right">0</span></p>
+                <p class="text-lg text-left mt-1 clear-both">Percentage: <span id="final-percentage" class="font-bold float-right">0%</span></p>
+            </div>
+            <button id="play-again-btn" class="w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition-colors">Play Again</button>
+        </div>
+    </div>
+
+    <div id="database-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-3xl w-full h-5/6 transform transition-all flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-4xl font-bold text-red-900">Data Explorer</h2>
+                <button id="close-db-btn" class="text-3xl font-bold text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            <p class="text-lg mb-4 text-gray-700">Click any item to expand and see its contents.</p>
+            <div id="database-container" class="flex-grow overflow-y-auto space-y-2 pr-2">
+                </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- DATA ---
+        
+        // 1. Source data parsed from the Master Document
+        const giEntries = [
+          {
+            name: "Northland GI",
+            island: "North Island",
+            subregions: ["Kerikeri", "Kaitaia", "Whangarei"],
+            features: ["Pacific Ocean"],
+            producers: ["Karikari Estate", "Okahu Estate", "Marsden Estate"]
+          },
+          {
+            name: "Auckland GI",
+            island: "North Island",
+            subregions: ["Kumeu GI", "Matakana GI", "Waiheke Island GI", "South Auckland", "West Auckland", "Clevedon", "Huapai", "Henderson"],
+            features: ["Pacific Ocean", "Waitakere Ranges"],
+            producers: ["Kumeu River", "Matua Valley", "Babich", "Cable Bay", "Stonyridge", "Pernod Ricard NZ", "Villa Maria"]
+          },
+          {
+            name: "Gisborne GI",
+            island: "North Island",
+            subregions: ["Hexton Hills (Golden Slope)", "Ormond", "Ormond Valley", "Manutuke", "Central Valley", "Riverpoint", "Patutahi", "Patutahi Plateau", "Waipaoa"],
+            features: ["Waipaoa River", "Poverty Bay", "Raukumara Range"],
+            producers: ["Millton", "Brunton Road"]
+          },
+          {
+            name: "Hawke's Bay/Hawkes Bay GI",
+            island: "North Island",
+            subregions: ["Central Hawke's Bay GI", "Te Awanga", "Northern Esk Valley", "Mohaka", "Esk River Valley", "Tutaekuri River Valley", "Ngaruroro River Valley", "Korokipo", "Bridge Pa", "Gimlett Gravels", "Ohiti", "Havelock North"],
+            features: ["Heretaunga Plains", "Hawke Bay", "Ngaruroro River", "Tukituki River"],
+            producers: ["Craggy Range", "Esk Valley Estate", "Sacred Hill", "Sileni", "Te Mata", "Trinity Hill"]
+          },
+          {
+            name: "Wairarapa GI",
+            island: "North Island",
+            subregions: ["Martinborough GI", "Gladstone GI", "Masterton"],
+            features: ["Aorangi and Tararua Ranges", "Ruamahanga River"],
+            producers: ["Ata Rangi", "Dry River", "Palliser Estate", "Voss Estate"]
+          },
+          {
+            name: "Nelson GI",
+            island: "South Island",
+            subregions: ["Motueka", "Takaka (Golden Bay)", "Upper Moutere (Moutere Hills)", "Waimea Plains"],
+            features: ["Tasman Mountains", "Richmond Range", "Waimea River", "Tasman Bay", "Golden Bay"],
+            producers: ["Greenhough", "Seifried Estate", "Neudorf"]
+          },
+          {
+            name: "Marlborough GI",
+            island: "South Island",
+            subregions: ["Awatere", "Southern Valleys", "Wairau Valley"],
+            features: ["Richmond Range", "Wither Hill Range", "Kaikoura Ranges", "Wairau River", "Awatere River"],
+            producers: ["Allan Scott", "Cloudy Bay", "Fromm", "Hunter's", "Saint Clair", "Spy Valley"]
+          },
+          {
+            name: "Canterbury GI",
+            island: "South Island",
+            subregions: ["North Canterbury GI", "Waipara Valley/Waipara GI", "Canterbury Plains"],
+            features: ["Waimakariri River", "Waipara River", "Puketeraki Range", "Canterbury Plains"],
+            producers: ["Pegasus Bay", "Pyramid Valley", "Mud House", "Giesen"]
+          },
+          {
+            name: "Waitaki North Otago/Waitaki Valley GI",
+            island: "South Island",
+            subregions: [], // Empty as per document
+            features: ["Waitaki River"],
+            producers: ["Ostler", "Pasquale", "River-T Estate Wines", "Valli Vineyards"]
+          },
+          {
+            name: "Central Otago GI",
+            island: "South Island",
+            subregions: ["Bannockburn GI", "Alexandra Basin", "Bendigo", "Cromwell Basin (Pisa & Lowburn)", "Gibbston", "Wanaka"],
+            features: ["Southern Alps", "Lake Wanaka", "Waitaki River (North Otago)"],
+            producers: ["Rippon", "Peregrine", "Felton Road", "Mt. Difficulty"]
+          }
+        ];
+
+        // 2. Generate the flat gameData array from the source entries
+        const gameData = [];
+        giEntries.forEach(gi => {
+          // Mode 1: GI-Island
+          gameData.push({ left: gi.name, right: gi.island, type: "GI-Island" });
+
+          // Mode 2: GI-Subregion
+          if (gi.subregions.length === 0) {
+            gameData.push({ left: gi.name, right: "N/A", type: "GI-Subregion" });
+          } else {
+            gi.subregions.forEach(subregion => {
+              gameData.push({ left: gi.name, right: subregion, type: "GI-Subregion" });
+            });
+          }
+
+          // Mode 3: GI-Natural-Feature
+          if (gi.features.length === 0) {
+            gameData.push({ left: gi.name, right: "N/A", type: "GI-Natural-Feature" });
+          } else {
+            gi.features.forEach(feature => {
+              gameData.push({ left: gi.name, right: feature, type: "GI-Natural-Feature" });
+            });
+          }
+          
+          // Mode 4: GI-Producer
+          if (gi.producers.length === 0) {
+             gameData.push({ left: gi.name, right: "N/A", type: "GI-Producer" });
+          } else {
+            gi.producers.forEach(producer => {
+              gameData.push({ left: gi.name, right: producer, type: "GI-Producer" });
+            });
+          }
+        });
+
+        // --- GLOBAL VARIABLES ---
+
+        // Game State
+        let score = 0;
+        let currentRound = 1;
+        let currentGameMode = '';
+        let gameRounds = []; 
+        let currentRoundPairs = []; 
+        let itemAttempts = new Map(); 
+        let matchesMade = 0;
+        let selectedLeft = null;  
+        let selectedRight = null; 
+        let roundHadIncorrectMatch = false; // For success modal
+
+        // Flashcard State
+        const flashcardDecks = {
+            'GI-Island': [],
+            'GI-Subregion': [],
+            'GI-Natural-Feature': [],
+            'GI-Producer': []
+        };
+        let currentFlashcardDeck = [];
+        let currentFilteredDeck = [];
+        let currentCardIndex = 0;
+        let isCardFlipped = false;
+        // Touch/Swipe State
+        let touchStartX = 0;
+        let touchEndX = 0;
+        const minSwipeDistance = 50; // Min pixels for a swipe
+        
+        // Data Arrays & Maps
+        let giIslandPairs = [];
+        let giSubregionPairs = [];
+        let giFeaturePairs = [];
+        let giProducerPairs = [];
+        const databaseJSON = {};
+        
+        // Lookup maps for game logic
+        const allLeftToRightPairs = {
+            'GI-Island': new Map(),
+            'GI-Subregion': new Map(),
+            'GI-Natural-Feature': new Map(),
+            'GI-Producer': new Map()
+        };
+        const allRightToLeftPairs = {
+            'GI-Island': new Map(),
+            'GI-Subregion': new Map(),
+            'GI-Natural-Feature': new Map(),
+            'GI-Producer': new Map()
+        };
+        
+        const positiveMessages = ["Great Job!", "Perfect Round!", "Magnifique!", "Superb!"];
+        const encouragingMessages = ["Nice work!", "You're making progress!", "Keep it up!"];
+        const TOTAL_ROUNDS = 10;
+        
+        // --- DOM ELEMENTS ---
+        const gameContainer = document.getElementById('game-container');
+        const startModal = document.getElementById('start-modal');
+        const startGameBtns = document.querySelectorAll('.start-game-btn');
+        const scoreInfo = document.getElementById('score-info');
+        const roundInfo = document.getElementById('round-info');
+        const roundPrompt = document.getElementById('round-prompt');
+        const leftTitle = document.getElementById('left-title');
+        const rightTitle = document.getElementById('right-title');
+        const gameRowsContainer = document.getElementById('game-rows-container');
+        const successModal = document.getElementById('success-modal');
+        const gameOverModal = document.getElementById('game-over-modal');
+        const nextRoundBtn = document.getElementById('next-round-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const gameMainMenuBtn = document.getElementById('game-main-menu-btn');
+        // DB Elements
+        const exploreDataBtn = document.getElementById('explore-data-btn');
+        const databaseModal = document.getElementById('database-modal');
+        const closeDbBtn = document.getElementById('close-db-btn');
+        const databaseContainer = document.getElementById('database-container');
+        // Flashcard Elements
+        const flashcardsBtn = document.getElementById('flashcards-btn');
+        const flashcardMenuModal = document.getElementById('flashcard-menu-modal');
+        const flashcardMenuBackBtn = document.getElementById('flashcard-menu-back-btn');
+        const startFlashcardsBtns = document.querySelectorAll('.start-flashcards-btn');
+        const flashcardContainer = document.getElementById('flashcard-container');
+        const flashcardMainMenuBtn = document.getElementById('flashcard-main-menu-btn');
+        const flashcardDeckTitle = document.getElementById('flashcard-deck-title');
+        const studyModeRadios = document.querySelectorAll('.study-mode-radio');
+        const resetDeckBtn = document.getElementById('reset-deck-btn');
+        const flashcard = document.getElementById('flashcard');
+        const flashcardFront = document.getElementById('flashcard-front');
+        const flashcardBack = document.getElementById('flashcard-back');
+        const flashcardStatus = document.getElementById('flashcard-status');
+        const flashcardEmptyDeckMsg = document.getElementById('flashcard-empty-deck-msg');
+        const prevCardBtn = document.getElementById('prev-card-btn');
+        const nextCardBtn = document.getElementById('next-card-btn');
+        const toggleLearnedBtn = document.getElementById('toggle-learned-btn');
+
+
+        // --- DATABASE FUNCTIONS (ADAPTED FOR NEW HIERARCHY) ---
+
+        /**
+         * Processes gameData into a 2-level JSON object for the data explorer:
+         * Island -> GI -> {Details}
+         */
+        function processDatabase() {
+            for (const key in databaseJSON) { delete databaseJSON[key]; } // Clear
+
+            // 1. Find all GIs and group them by Island
+            gameData.forEach(item => {
+                if (item.type === 'GI-Island') {
+                    const giName = item.left;
+                    const islandName = item.right;
+                    if (!databaseJSON[islandName]) {
+                        databaseJSON[islandName] = { gis: {} };
+                    }
+                    if (!databaseJSON[islandName].gis[giName]) {
+                         databaseJSON[islandName].gis[giName] = { subregions: new Set(), features: new Set(), producers: new Set() };
+                    }
+                }
+            });
+
+            // 2. Populate details for each GI
+            gameData.forEach(item => {
+                const { left, right, type } = item;
+                if (right === 'N/A' || right === 'none') return;
+
+                // Find the GI entry (left) and add the detail (right)
+                for (const island in databaseJSON) {
+                    if (databaseJSON[island].gis[left]) { // 'left' is the GI name
+                        if (type === 'GI-Subregion') {
+                            databaseJSON[island].gis[left].subregions.add(right);
+                        } else if (type === 'GI-Natural-Feature') {
+                            databaseJSON[island].gis[left].features.add(right);
+                        } else if (type === 'GI-Producer') {
+                            databaseJSON[island].gis[left].producers.add(right);
+                        }
+                    }
+                }
+            });
+            
+            // 3. Clean up empty sets
+            for (const island in databaseJSON) {
+                for (const gi in databaseJSON[island].gis) {
+                    const giData = databaseJSON[island].gis[gi];
+                    if (giData.subregions.size === 0) giData.subregions.add("N/A");
+                    if (giData.features.size === 0) giData.features.add("N/A");
+                    if (giData.producers.size === 0) giData.producers.add("N/A");
+                }
+            }
+        }
+
+        /**
+         * Builds the HTML for the 2-level (Island -> GI) data explorer.
+         * Re-uses CSS classes from reference code (.db-state, .db-zone)
+         */
+        function buildDatabaseExplorer() {
+            databaseContainer.innerHTML = ''; 
+            const islands = Object.keys(databaseJSON).sort();
+            
+            islands.forEach(island => {
+                const islandData = databaseJSON[island];
+                const islandId = `db-island-${island.replace(/[\s\(\)\/'.]/g, '')}`;
+                const islandDiv = document.createElement('div');
+                // Use .db-item and .db-state (from ref code) for Island level
+                islandDiv.innerHTML = `<div class="db-item db-state" data-target="${islandId}">${island}</div>`;
+                const giContainer = document.createElement('div');
+                giContainer.id = islandId;
+                giContainer.className = 'db-item-content space-y-2 py-2';
+
+                const gisInIsland = Object.keys(islandData.gis).sort();
+                gisInIsland.forEach(gi => {
+                    const giData = islandData.gis[gi];
+                    const giId = `db-gi-${island.replace(/[\s\(\)\/'.]/g, '')}-${gi.replace(/[\s\(\)\/'.]/g, '')}`;
+                    const giDiv = document.createElement('div');
+                    // Use .db-item and .db-zone (from ref code) for GI level
+                    giDiv.innerHTML = `<div class="db-item db-zone" data-target="${giId}">${gi}</div>`;
+                    const detailsContainer = document.createElement('div');
+                    detailsContainer.id = giId;
+                    detailsContainer.className = 'db-item-content py-2';
+                    
+                    let detailsHtml = '<div class="db-gi-details">';
+                    // Add Subregions, which was not in the ref code's GI details
+                    detailsHtml += '<h5>Subregions:</h5><ul>';
+                    Array.from(giData.subregions).sort().forEach(s => detailsHtml += `<li>${s}</li>`);
+                    detailsHtml += '</ul>';
+                    detailsHtml += '<h5>Major Natural Features:</h5><ul>';
+                    Array.from(giData.features).sort().forEach(f => detailsHtml += `<li>${f}</li>`);
+                    detailsHtml += '</ul>';
+                    detailsHtml += '<h5>Key Producers:</h5><ul>';
+                    Array.from(giData.producers).sort().forEach(p => detailsHtml += `<li>${p}</li>`);
+                    detailsHtml += '</ul></div>';
+                    detailsContainer.innerHTML = detailsHtml;
+
+                    giDiv.appendChild(detailsContainer);
+                    giContainer.appendChild(giDiv);
+                });
+                islandDiv.appendChild(giContainer);
+                databaseContainer.appendChild(islandDiv);
+            });
+        }
+
+        databaseContainer.addEventListener('click', function(e) {
+            const target = e.target.closest('.db-item');
+            if (target) {
+                const contentId = target.dataset.target;
+                if (contentId) {
+                    const content = document.getElementById(contentId);
+                    content.classList.toggle('expanded');
+                    target.classList.toggle('expanded');
+                }
+            }
+        });
+
+
+        // --- GAME FUNCTIONS (Identical Logic, New Data) ---
+
+        /**
+        * Checks if a pair conflicts with the pairs already in the round.
+        * This is the "smart" logic to prevent ambiguity.
+        */
+        function doesPairConflict(pair, roundPairs, mode) {
+            const ltrMap = allLeftToRightPairs[mode];
+            const rtlMap = allRightToLeftPairs[mode];
+
+            const newLeft = pair.left;
+            const newRight = pair.right;
+
+            // Get all possible partners for the new pair
+            const allRightsForNewLeft = ltrMap.get(newLeft) || new Set();
+            const allLeftsForNewRight = rtlMap.get(newRight) || new Set();
+
+            for (const existingPair of roundPairs) {
+                const existingLeft = existingPair.left;
+                const existingRight = existingPair.right;
+
+                // Check for ambiguity:
+                // 1. Does the new Left (GI_A) have a possible match to an *existing* Right (Feature_B)?
+                if (allRightsForNewLeft.has(existingRight)) return true;
+                
+                // 2. Does the new Right (Feature_A) have a possible match to an *existing* Left (GI_B)?
+                if (allLeftsForNewRight.has(existingLeft)) return true;
+            }
+            return false;
+        }
+
+        function buildGameRounds() {
+            gameRounds = [];
+            let sourcePairs = [];
+            let useSmartBuilder = false;
+
+            if (currentGameMode === 'GI-Island') {
+                sourcePairs = [...giIslandPairs];
+                useSmartBuilder = true; // Many GIs per Island
+            } else if (currentGameMode === 'GI-Subregion') {
+                sourcePairs = [...giSubregionPairs.filter(p => p.right !== "N/A")]; // Exclude N/A from game
+                useSmartBuilder = true; // Many Subregions per GI
+            } else if (currentGameMode === 'GI-Natural-Feature') {
+                sourcePairs = [...giFeaturePairs];
+                useSmartBuilder = true; // Feature can be in multiple GIs
+            } else if (currentGameMode === 'GI-Producer') {
+                sourcePairs = [...giProducerPairs];
+                useSmartBuilder = true; // Producer can be in multiple GIs
+            }
+
+            for (let i = 0; i < TOTAL_ROUNDS; i++) {
+                shuffleArray(sourcePairs);
+                let roundPairs = [];
+                let leftsInRound = new Set();
+                let rightsInRound = new Set();
+                
+                let attempts = 0; // Failsafe
+                let pairIndex = 0;
+
+                while (roundPairs.length < 5 && attempts < sourcePairs.length * 2) {
+                    const pair = sourcePairs[pairIndex % sourcePairs.length];
+                    pairIndex++;
+                    attempts++;
+                    
+                    // Simple check for duplicates
+                    if (leftsInRound.has(pair.left) || rightsInRound.has(pair.right)) {
+                        continue;
+                    }
+
+                    // Smart check for ambiguity
+                    if (useSmartBuilder && doesPairConflict(pair, roundPairs, currentGameMode)) {
+                        continue;
+                    }
+
+                    // Pair is clean
+                    roundPairs.push(pair);
+                    leftsInRound.add(pair.left);
+                    rightsInRound.add(pair.right);
+                }
+                gameRounds.push(roundPairs);
+            }
+        }
+
+
+        function initGame() {
+            score = 0;
+            currentRound = 1;
+            buildGameRounds(); 
+            startRound();
+        }
+        
+        function startRound() {
+            if (currentRound > TOTAL_ROUNDS) {
+                showGameOver();
+                return;
+            }
+
+            matchesMade = 0;
+            selectedLeft = null;
+            selectedRight = null;
+            itemAttempts.clear();
+            roundHadIncorrectMatch = false; // Reset for contextual messages
+            
+            currentRoundPairs = gameRounds[currentRound - 1];
+            
+            if (!currentRoundPairs || currentRoundPairs.length < 5 || !currentRoundPairs[0]) {
+                console.error("Error: Not enough non-conflicting pairs to build round.");
+                showMainMenu();
+                alert("Error: Could not load game data. Not enough unique pairs for this mode.");
+                return;
+            }
+
+            const leftItems = [];
+            const rightItems = [];
+            const pairType = currentRoundPairs[0].type;
+
+            currentRoundPairs.forEach(pair => {
+                leftItems.push(pair.left);
+                rightItems.push(pair.right);
+            });
+
+            shuffleArray(rightItems); 
+            updateScoreboard();
+            renderButtons(leftItems, rightItems, pairType);
+        }
+
+        function renderButtons(leftItems, rightItems, pairType) {
+            gameRowsContainer.innerHTML = ''; 
+            itemAttempts.clear(); 
+
+            switch (currentGameMode) { // Use currentGameMode for consistency
+                case 'GI-Island':
+                    leftTitle.textContent = "GI";
+                    rightTitle.textContent = "Island";
+                    roundPrompt.textContent = "Match the GI to its Island";
+                    break;
+                case 'GI-Subregion':
+                    leftTitle.textContent = "GI";
+                    rightTitle.textContent = "Subregion";
+                    roundPrompt.textContent = "Match the GI to its Subregion";
+                    break;
+                case 'GI-Natural-Feature':
+                    leftTitle.textContent = "GI";
+                    rightTitle.textContent = "Major Natural Feature";
+                    roundPrompt.textContent = "Match the GI to its Natural Feature";
+                    break;
+                case 'GI-Producer':
+                    leftTitle.textContent = "GI";
+                    rightTitle.textContent = "Key Producer";
+                    roundPrompt.textContent = "Match the GI to its Producer";
+                    break;
+            }
+
+            for(let i = 0; i < 5; i++) {
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-2 gap-4 md:gap-8';
+                const leftItem = leftItems[i];
+                const rightItem = rightItems[i];
+
+                const leftButton = document.createElement('button');
+                const leftButtonId = `left-${i}`;
+                leftButton.textContent = leftItem;
+                leftButton.dataset.id = leftButtonId; 
+                leftButton.dataset.value = leftItem;
+                leftButton.classList.add('btn-choice', 'p-4', 'rounded-lg', 'font-semibold');
+                leftButton.onclick = () => handleLeftClick(leftButton);
+                itemAttempts.set(leftButtonId, 0); 
+
+                const rightButton = document.createElement('button');
+                const rightButtonId = `right-${i}`;
+                rightButton.textContent = rightItem;
+                rightButton.dataset.id = rightButtonId;
+                rightButton.dataset.value = rightItem;
+                rightButton.classList.add('btn-choice', 'p-4', 'rounded-lg', 'font-semibold');
+                rightButton.onclick = () => handleRightClick(rightButton);
+
+                row.appendChild(leftButton);
+                row.appendChild(rightButton);
+                gameRowsContainer.appendChild(row);
+            }
+        }
+        
+        function handleLeftClick(button) {
+            if (button.classList.contains('correct')) return;
+            document.querySelectorAll('#game-rows-container .btn-choice[data-id^="left-"]').forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+            selectedLeft = button;
+            checkMatch();
+        }
+
+        function handleRightClick(button) {
+            if (button.classList.contains('correct')) return;
+            document.querySelectorAll('#game-rows-container .btn-choice[data-id^="right-"]').forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+            selectedRight = button;
+            checkMatch();
+        }
+
+        function checkMatch() {
+            if (!selectedLeft || !selectedRight) {
+                return; 
+            }
+
+            const leftBtn = selectedLeft;
+            const rightBtn = selectedRight;
+            const leftValue = leftBtn.dataset.value;
+            const rightValue = rightBtn.dataset.value;
+            const leftId = leftBtn.dataset.id;
+            
+            selectedLeft = null;
+            selectedRight = null;
+            leftBtn.classList.remove('selected');
+            rightBtn.classList.remove('selected');
+
+            // Use the global map for the current mode
+            const isCorrect = allLeftToRightPairs[currentGameMode].get(leftValue)?.has(rightValue);
+
+            if (isCorrect) {
+                matchesMade++;
+                const currentAttempts = itemAttempts.get(leftId);
+                if (currentAttempts === 0) score += 2;
+                else score += 1; 
+
+                leftBtn.classList.add('correct');
+                rightBtn.classList.add('correct');
+                leftBtn.disabled = true;
+                rightBtn.disabled = true;
+
+                if (matchesMade === 5) {
+                    setTimeout(showSuccessModal, 500);
+                }
+            } else {
+                score = Math.max(0, score - 1); 
+                roundHadIncorrectMatch = true; // Set flag for encouraging message
+                const currentAttempts = itemAttempts.get(leftId);
+                itemAttempts.set(leftId, currentAttempts + 1); 
+
+                leftBtn.classList.add('incorrect');
+                rightBtn.classList.add('incorrect');
+                setTimeout(() => {
+                    leftBtn.classList.remove('incorrect');
+                    rightBtn.classList.remove('incorrect');
+                }, 500);
+            }
+            updateScoreboard();
+        }
+
+        function updateScoreboard() {
+            scoreInfo.textContent = score;
+            roundInfo.textContent = `${Math.min(currentRound, TOTAL_ROUNDS)} / ${TOTAL_ROUNDS}`;
+        }
+        
+        function showSuccessModal() {
+            const modalMessage = document.getElementById('modal-message');
+            let message = '';
+            
+            if (roundHadIncorrectMatch) {
+                message = encouragingMessages[Math.floor(Math.random() * encouragingMessages.length)];
+                modalMessage.classList.remove('text-green-700');
+                modalMessage.classList.add('text-blue-700'); // Different color for encouragement
+            } else {
+                message = positiveMessages[Math.floor(Math.random() * positiveMessages.length)];
+                modalMessage.classList.remove('text-blue-700');
+                modalMessage.classList.add('text-green-700'); // Green for perfect
+            }
+            modalMessage.textContent = message;
+            
+            successModal.classList.remove('hidden');
+            setTimeout(() => {
+                successModal.firstElementChild.classList.remove('scale-95', 'opacity-0');
+            }, 10);
+        }
+
+        function hideSuccessModal() {
+            successModal.firstElementChild.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                successModal.classList.add('hidden');
+                currentRound++;
+                startRound();
+            }, 200);
+        }
+
+        function showGameOver() {
+            const maxScore = TOTAL_ROUNDS * 5 * 2;
+            const percentage = Math.round(Math.max(0, (score / maxScore) * 100));
+            let message = '';
+            if (percentage === 100) message = "Perfect Score!";
+            else if (percentage >= 90) message = "You're a Master!";
+            else if (percentage >= 80) message = "Superb!";
+            else if (percentage >= 70) message = "Great work.";
+            else if (percentage >= 50) message = "Nicely done!";
+            else message = "Keep practicing!";
+
+            gameOverModal.querySelector('#final-score').textContent = score;
+            gameOverModal.querySelector('#final-percentage').textContent = `${percentage}%`;
+            gameOverModal.querySelector('#final-score-message').textContent = message;
+            
+            gameOverModal.classList.remove('hidden');
+            setTimeout(() => {
+                gameOverModal.firstElementChild.classList.remove('scale-95', 'opacity-0');
+            }, 10);
+        }
+
+        function hideGameOver() {
+            gameOverModal.firstElementChild.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                gameOverModal.classList.add('hidden');
+                startModal.classList.remove('hidden'); // Go to main menu
+            }, 200);
+        }
+
+        // --- FLASHCARD FUNCTIONS (ADAPTED FOR NEW MODES) ---
+        
+        function buildFlashcardDecks() {
+            Object.keys(flashcardDecks).forEach(key => flashcardDecks[key] = []); // Clear
+            const uniquePairs = new Map();
+            const cleanId = (str) => str.replace(/[\s\(\)\/'.&-]/g, '');
+
+            // --- GI-Island Deck (Mode 1) ---
+            // front: Island, back: GI(s)
+            uniquePairs.set('GI-Island', new Map());
+            giIslandPairs.forEach(p => {
+                if (!uniquePairs.get('GI-Island').has(p.right)) {
+                    uniquePairs.get('GI-Island').set(p.right, new Set());
+                }
+                uniquePairs.get('GI-Island').get(p.right).add(p.left); // key=Island, value=Set(GIs)
+            });
+            uniquePairs.get('GI-Island').forEach((gis, island) => {
+                flashcardDecks['GI-Island'].push({
+                    prompt: `What GI(s) are on [B]?`.replace('[B]', island), // Custom prompt
+                    front: island,
+                    back: Array.from(gis).sort().join(' / '),
+                    id: `gi-${cleanId(island)}`,
+                    learned: false
+                });
+            });
+
+            // --- GI-Subregion Deck (Mode 2) ---
+            // front: Subregion, back: GI(s)
+            uniquePairs.set('GI-Subregion', new Map());
+            const noSubregionGIs = giSubregionPairs
+                .filter(p => p.right === 'N/A')
+                .map(p => p.left)
+                .sort()
+                .join(' / ');
+            const regularSubregionPairs = giSubregionPairs.filter(p => p.right !== 'N/A');
+
+            regularSubregionPairs.forEach(p => {
+                if (!uniquePairs.get('GI-Subregion').has(p.right)) {
+                    uniquePairs.get('GI-Subregion').set(p.right, new Set());
+                }
+                uniquePairs.get('GI-Subregion').get(p.right).add(p.left); // key=Subregion, value=Set(GIs)
+            });
+            
+            uniquePairs.get('GI-Subregion').forEach((gis, subregion) => {
+                flashcardDecks['GI-Subregion'].push({
+                    prompt: `What GI is [B] in?`.replace('[B]', subregion), // User's prompt
+                    front: subregion,
+                    back: Array.from(gis).sort().join(' / '),
+                    id: `sub-${cleanId(subregion)}`,
+                    learned: false
+                });
+            });
+
+            if (noSubregionGIs) {
+                flashcardDecks['GI-Subregion'].push({
+                    prompt: `A special rule of New Zealand GIs:`,
+                    front: `Which GI(s) have no listed subregions?`,
+                    back: noSubregionGIs,
+                    id: `sub-special-no-subregions`,
+                    learned: false
+                });
+            }
+
+            // --- GI-Natural-Feature Deck (Mode 3) ---
+            // front: Feature, back: GI(s)
+            uniquePairs.set('GI-Natural-Feature', new Map());
+            giFeaturePairs.forEach(p => {
+                if (!uniquePairs.get('GI-Natural-Feature').has(p.right)) {
+                    uniquePairs.get('GI-Natural-Feature').set(p.right, new Set());
+                }
+                uniquePairs.get('GI-Natural-Feature').get(p.right).add(p.left); // key=Feature, value=Set(GIs)
+            });
+            
+            uniquePairs.get('GI-Natural-Feature').forEach((gis, feature) => {
+                flashcardDecks['GI-Natural-Feature'].push({
+                    prompt: `What GI has the natural feature [B]?`.replace('[B]', feature), // User's prompt
+                    front: feature,
+                    back: Array.from(gis).sort().join(' / '),
+                    id: `gf-${cleanId(feature)}`,
+                    learned: false
+                });
+            });
+
+            // --- GI-Producer Deck (Mode 4) ---
+            // front: Producer, back: GI(s)
+            uniquePairs.set('GI-Producer', new Map());
+            giProducerPairs.forEach(p => {
+                    if (!uniquePairs.get('GI-Producer').has(p.right)) {
+                        uniquePairs.get('GI-Producer').set(p.right, new Set());
+                    }
+                uniquePairs.get('GI-Producer').get(p.right).add(p.left); // key=Producer, value=Set(GIs)
+            });
+            
+            uniquePairs.get('GI-Producer').forEach((gis, producer) => {
+                flashcardDecks['GI-Producer'].push({
+                    prompt: `What GI is [B] in?`.replace('[B]', producer), // User's prompt
+                    front: producer,
+                    back: Array.from(gis).sort().join(' / '),
+                    id: `gp-${cleanId(producer)}`,
+                    learned: false
+                });
+            });
+        }
+
+        function initFlashcards(mode) {
+            currentGameMode = mode; 
+            currentFlashcardDeck = flashcardDecks[mode];
+            shuffleArray(currentFlashcardDeck);
+
+            if (mode === 'GI-Island') flashcardDeckTitle.textContent = 'GI / Island Deck';
+            if (mode === 'GI-Subregion') flashcardDeckTitle.textContent = 'GI / Subregion Deck';
+            if (mode === 'GI-Natural-Feature') flashcardDeckTitle.textContent = 'GI / Natural Feature Deck';
+            if (mode === 'GI-Producer') flashcardDeckTitle.textContent = 'GI / Producer Deck';
+
+            document.querySelector('.study-mode-radio[value="all"]').checked = true;
+            buildFilteredDeck();
+            
+            startModal.classList.add('hidden');
+            flashcardMenuModal.classList.add('hidden');
+            flashcardContainer.classList.remove('hidden');
+        }
+
+        function buildFilteredDeck() {
+            const studyMode = document.querySelector('.study-mode-radio:checked').value;
+            if (studyMode === 'all') {
+                currentFilteredDeck = [...currentFlashcardDeck];
+            } else if (studyMode === 'unlearned') {
+                currentFilteredDeck = currentFlashcardDeck.filter(card => !card.learned);
+            } else if (studyMode === 'learned') {
+                currentFilteredDeck = currentFlashcardDeck.filter(card => card.learned);
+            }
+            isCardFlipped = false;
+            flashcard.classList.remove('flipped');
+            showCard(0);
+        }
+
+        function showCard(index) {
+            currentCardIndex = index;
+            isCardFlipped = false;
+            flashcard.classList.remove('flipped');
+
+            if (currentFilteredDeck.length === 0) {
+                flashcard.classList.add('hidden');
+                flashcardEmptyDeckMsg.classList.remove('hidden');
+                flashcardStatus.textContent = "Card 0 of 0";
+                prevCardBtn.disabled = true;
+                nextCardBtn.disabled = true;
+                toggleLearnedBtn.disabled = true;
+                return;
+            }
+
+            flashcard.classList.remove('hidden');
+            flashcardEmptyDeckMsg.classList.add('hidden');
+            toggleLearnedBtn.disabled = false;
+
+            const card = currentFilteredDeck[index];
+            
+            flashcardFront.querySelector('.flashcard-prompt').textContent = card.prompt;
+            flashcardFront.querySelector('.flashcard-content').textContent = card.front;
+            flashcardBack.querySelector('.flashcard-answer').textContent = card.back;
+            
+            flashcardStatus.textContent = `Card ${index + 1} of ${currentFilteredDeck.length}`;
+
+            prevCardBtn.disabled = (index === 0);
+            nextCardBtn.disabled = (index === currentFilteredDeck.length - 1);
+            
+            if (card.learned) {
+                toggleLearnedBtn.textContent = 'Mark as Unlearned';
+                toggleLearnedBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'border-green-700');
+                toggleLearnedBtn.classList.add('bg-gray-500', 'hover:bg-gray-600', 'border-gray-600');
+            } else {
+                toggleLearnedBtn.textContent = 'Mark as Learned';
+                toggleLearnedBtn.classList.remove('bg-gray-500', 'hover:bg-gray-600', 'border-gray-600');
+                toggleLearnedBtn.classList.add('bg-green-600', 'hover:bg-green-700', 'border-green-700');
+            }
+        }
+
+        function flipCard() {
+            if (currentFilteredDeck.length > 0) {
+                isCardFlipped = !isCardFlipped;
+                flashcard.classList.toggle('flipped');
+            }
+        }
+
+        function nextCard() {
+            if (currentCardIndex < currentFilteredDeck.length - 1) {
+                showCard(currentCardIndex + 1);
+            }
+        }
+
+        function prevCard() {
+            if (currentCardIndex > 0) {
+                showCard(currentCardIndex - 1);
+            }
+        }
+
+        function toggleLearned() {
+            if (currentFilteredDeck.length === 0) return; 
+            const card = currentFilteredDeck[currentCardIndex];
+            if (!card) return; 
+
+            const mainDeckCard = currentFlashcardDeck.find(c => c.id === card.id);
+            if (mainDeckCard) { // Check if card exists in main deck
+                mainDeckCard.learned = !mainDeckCard.learned;
+                
+                if (mainDeckCard.learned) {
+                    toggleLearnedBtn.textContent = 'Mark as Unlearned';
+                    toggleLearnedBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'border-green-700');
+                    toggleLearnedBtn.classList.add('bg-gray-500', 'hover:bg-gray-600', 'border-gray-600');
+                } else {
+                    toggleLearnedBtn.textContent = 'Mark as Learned';
+                    toggleLearnedBtn.classList.remove('bg-gray-500', 'hover:bg-gray-600', 'border-gray-600');
+                    toggleLearnedBtn.classList.add('bg-green-600', 'hover:bg-green-700', 'border-green-700');
+                }
+            }
+            
+            setTimeout(() => {
+                const oldIndex = currentCardIndex;
+                const oldId = currentFilteredDeck[oldIndex]?.id; // Use optional chaining
+                buildFilteredDeck();
+                
+                if (currentFilteredDeck.length === 0) return; // Deck is now empty
+
+                // Try to find the card in the new deck
+                const newIndex = currentFilteredDeck.findIndex(c => c.id === oldId);
+
+                if (newIndex !== -1) {
+                    // Card is still in this filtered deck, stay on it
+                    showCard(newIndex);
+                } else {
+                    // Card was removed (e.g., marked learned in "Unlearned" mode)
+                    // Show the next logical card
+                    showCard(Math.min(oldIndex, currentFilteredDeck.length - 1));
+                }
+            }, 200);
+        }
+
+        function resetDeck() {
+            currentFlashcardDeck.forEach(card => card.learned = false);
+            buildFilteredDeck();
+        }
+
+        function showMainMenu() {
+            gameContainer.classList.add('hidden');
+            flashcardContainer.classList.add('hidden');
+            flashcardMenuModal.classList.add('hidden');
+            databaseModal.classList.add('hidden');
+            startModal.classList.remove('hidden');
+        }
+
+        // --- KEYBOARD & TOUCH CONTROLS ---
+        function handleKeyControls(e) {
+            if (flashcardContainer.classList.contains('hidden')) return;
+
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevCard();
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                nextCard();
+            } else if (e.key === ' ' || e.code === 'Space') {
+                e.preventDefault();
+                flipCard();
+            }
+        }
+
+        function handleTouchStart(e) {
+            touchStartX = e.touches[0].clientX;
+            touchEndX = touchStartX;
+        }
+
+        function handleTouchMove(e) {
+            touchEndX = e.touches[0].clientX;
+        }
+
+        function handleTouchEnd(e) {
+            if (currentFilteredDeck.length === 0) return;
+            const swipeDistance = touchEndX - touchStartX;
+
+            if (Math.abs(swipeDistance) < minSwipeDistance) {
+                flipCard();
+            } else if (swipeDistance < -minSwipeDistance) {
+                nextCard();
+            } else if (swipeDistance > minSwipeDistance) {
+                prevCard();
+            }
+            
+            touchStartX = 0;
+            touchEndX = 0;
+        }
+
+        // --- GLOBAL INITIALIZATION ---
+        
+        function initializeData() {
+            // 1. Populate filtered arrays for the matching game
+            giIslandPairs = gameData.filter(q => q.type === 'GI-Island');
+            giSubregionPairs = gameData.filter(q => q.type === 'GI-Subregion');
+            giFeaturePairs = gameData.filter(q => q.type === 'GI-Natural-Feature' && q.right !== 'N/A' && q.right !== 'none');
+            giProducerPairs = gameData.filter(q => q.type === 'GI-Producer' && q.right !== 'N/A');
+            
+            // 2. Build the LTR and RTL maps for game logic
+            [
+                { key: 'GI-Island', data: giIslandPairs },
+                { key: 'GI-Subregion', data: giSubregionPairs },
+                { key: 'GI-Natural-Feature', data: giFeaturePairs },
+                { key: 'GI-Producer', data: giProducerPairs }
+            ].forEach(mode => {
+                allLeftToRightPairs[mode.key] = new Map();
+                allRightToLeftPairs[mode.key] = new Map();
+                
+                mode.data.forEach(pair => {
+                    // LTR
+                    if (!allLeftToRightPairs[mode.key].has(pair.left)) {
+                        allLeftToRightPairs[mode.key].set(pair.left, new Set());
+                    }
+                    allLeftToRightPairs[mode.key].get(pair.left).add(pair.right);
+                    
+                    // RTL
+                    if (!allRightToLeftPairs[mode.key].has(pair.right)) {
+                        allRightToLeftPairs[mode.key].set(pair.right, new Set());
+                    }
+                    allRightToLeftPairs[mode.key].get(pair.right).add(pair.left);
+                });
+            });
+
+            // 3. Build the flashcard decks with new logic
+            buildFlashcardDecks();
+        }
+        
+        // Helper
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Run the initialization function once the script loads
+        initializeData();
+
+        // 4. Set up event listeners
+        startGameBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentGameMode = btn.dataset.mode;
+                startModal.classList.add('hidden');
+                gameContainer.classList.remove('hidden');
+                initGame();
+            });
+        });
+        
+        nextRoundBtn.addEventListener('click', hideSuccessModal);
+        playAgainBtn.addEventListener('click', hideGameOver);
+        gameMainMenuBtn.addEventListener('click', showMainMenu);
+
+        exploreDataBtn.addEventListener('click', () => {
+            processDatabase(); 
+            buildDatabaseExplorer(); 
+            databaseModal.classList.remove('hidden');
+        });
+
+        closeDbBtn.addEventListener('click', () => {
+            databaseModal.classList.add('hidden');
+        });
+
+        flashcardsBtn.addEventListener('click', () => {
+            startModal.classList.add('hidden');
+            flashcardMenuModal.classList.remove('hidden');
+        });
+
+        flashcardMenuBackBtn.addEventListener('click', () => {
+            flashcardMenuModal.classList.add('hidden');
+            startModal.classList.remove('hidden');
+        });
+
+        startFlashcardsBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                initFlashcards(btn.dataset.mode);
+            });
+        });
+
+        prevCardBtn.addEventListener('click', prevCard);
+        nextCardBtn.addEventListener('click', nextCard);
+        toggleLearnedBtn.addEventListener('click', toggleLearned);
+        resetDeckBtn.addEventListener('click', resetDeck);
+        studyModeRadios.forEach(radio => radio.addEventListener('change', buildFilteredDeck));
+        flashcardMainMenuBtn.addEventListener('click', showMainMenu);
+
+        // Add new listeners
+        document.addEventListener('keydown', handleKeyControls);
+        flashcard.addEventListener('touchstart', handleTouchStart, false);
+        flashcard.addEventListener('touchmove', handleTouchMove, false);
+        flashcard.addEventListener('touchend', handleTouchEnd, false);
+
+    </script>
+</body>
+</html>
